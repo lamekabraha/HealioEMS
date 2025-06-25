@@ -1,55 +1,59 @@
 'use client';
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const router = useRouter();
+    const [error, setError] = useState<string | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError("");
+        setError(null); // clear previous errors
 
-        const result = await signIn("credentials", {
+        // call signIn function
+        const result = await signIn('credentials', {
+            redirect: false, // prevent NextAuth from redirecting automatically
             email,
-            password, 
-            redirect: false,
+            password,
         });
 
         if (result?.error) {
-            setError("Invalid email or password");
-        }else{
-            router.push('/dashboard');
+            setError(result.error);
+            console.error('login error:', result.error);
+        }else {
+            // login success, redirect to dashboard
+            console.log('Login successful!');
+            window.location.href = '/dashboard';
         }
     };
 
-    return(
-        <div className="max-w-md mx-auto mt-10">
-            <h1 className="text-2xl font-bold md-6">Login</h1>
-            {error && <p className="text-red-500 md-4">{error}</p>}
-            <form onSubmit={handleSubmit} className="space-y-4">
+    return (
+        <div>
+            <h1>Login</h1>
+            {error && <p style={{color: 'red'}}>{error}</p>}
+            <form onSubmit={handleSubmit}>
                 <div>
-                    <label className="block md-1">Email</label>
-                    <input type="email" className="w-full p-2 border rounded" value={email} onChange={(e) => setEmail(e.target.value)} required/>
+                    <label htmlFor="email">Email:</label>
+                    <input
+                        type="email"
+                        id="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                    />
                 </div>
                 <div>
-                    <label className="block md-1">Password</label>
-                    <input type="password" name="password" id="password" className="w-full p-2 border rounded" value={password} onChange={(e)=>setPassword(e.target.value)} required />
+                    <label htmlFor="password">Password</label>
+                    <input
+                        type="password"
+                        id="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
                 </div>
-                <button
-                    type="submit"
-                    className="
-                        w-full
-                        bg-blue-600
-                        text-white
-                        p-2
-                        rounded
-                        hover:bg-blue-700
-                        "
-                >Sign In</button>
+                <button type="submit">Sign In</button>
             </form>
         </div>
     )

@@ -1,4 +1,4 @@
-// File: C:\Users\lamek\OneDrive - Sheffield Hallam University\Projects\Hospital Management System\healio_ems\src\app\layout.tsx
+// File: C:\Users\lamek\OneDrive\Desktop\Projects\healio_ems\src\app\layout.tsx
 import * as entry from '../../../src/app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

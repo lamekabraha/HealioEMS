@@ -1,9 +1,7 @@
-import NextAuth from 'next-auth';
+import NextAuth from "next-auth";
+import mysql, {Pool} from 'mysql2/promise'
 import CredentialsProvider from 'next-auth/providers/credentials';
-import mysql, {  Pool  } from 'mysql2/promise';
-import {  verifyPassword  } from '@/lib/auth';
-import { routeModule } from 'next/dist/build/templates/pages';
-import bcrypt from 'bcryptjs';
+import { verifyPassword } from '@/lib/auth';
 
 const pool: Pool = mysql.createPool({
     host: process.env.DB_HOST,
@@ -11,73 +9,100 @@ const pool: Pool = mysql.createPool({
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 });
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+const Auth = {
+    secret: process.env.NEXTAUTH_SECRET,
+    session: {
+        strategy: 'jwt', // recommended for stateless sessions
+    },
     providers: [
         CredentialsProvider({
-            credentials:{
-                email: {label: 'Email', type: 'email'},
-                password: {label: 'Password', type: 'password'},
+            name: "Credentials", //name of provider - email and passwords, etc
+            //define fields for credential object
+            credentials: {
+                email: { label: "Email", type: "text" },
+                password: { label: "Password", type: "password"}
             },
+            
+            //verify against database here
             async authorize(credentials) {
-                try{
-                    //type guard for cred
-                    if(!credentials?.email || credentials?.password){
-                        throw new Error('Missing credentials');
+                try {
+                    if (typeof credentials.email !== 'string' || typeof credentials.password !=='string'){
+                        console.error('Invalid credentials type provided in authorize callback.')
+                        return null;
                     }
 
-                    // fimd account by email
-                    const [rows]: [any[], any] = await pool.query(
+                    //step 1 find email in database
+                    const [rows]: any = await pool.query(
                         'select * from accounts where Email = ?',
                         [credentials.email]
                     );
 
-                    // check if user exists
-                    if (rows.length === 0) return null;
+                    //step 2 check if user exists
+                    // if user does not exist
+                    if (rows.length===0){
+                        console.log('No user found with this email:', credentials.email);
+                        return null;
+                    }
+                    
+                    //if user exists
+                    const user = rows[0]
 
-                    const user = rows[0];
-
-                    // verify password
+                    //step 3 verify password using bcryptjs
                     const isValid = await verifyPassword(
-                        credentials.password.toString(),
+                        credentials.password,
                         user.HashedPassword
                     );
 
-                    if (!isValid) return null;
+                    if (!isValid){
+                        console.log('Invalid Password for user:', credentials.email)
+                        return null;
+                    }
 
-                    //return user object for session
-                    return{
-                        id: user.AccountID.toString().padStart(4, '0'), // format as '0001'
+                    //step 44 return user object for session
+                    //'user' object is passed tio the 'jwt' callback
+                    //must include 'ID' and can include other properties
+                    return {
+                        id: user.AccountID.toString(),
                         email: user.Email,
-                        role: user.Type,
+                        type: user.Type,
                     };
-                }catch (err) {
-                    console.error('Authentication Error:', err);
-                    return null;
+                }catch (err){
+                    console.error('NextAuth authorize error:', err);
+                    return null
                 }
             },
         }),
     ],
+    //step 5 these are essential for customising session and JWT
     callbacks: {
-        // add role to JWT token
+        // JWT callback is called when a JWT is created, updated, or read
+        // add custom data to the JWT token here
         async jwt({token, user}) {
             if (user) {
-                token.role = user.role;
                 token.id = user.id;
+                token.email = user.email;
+                token.role = user.role;
             }
             return token;
         },
-        // expose role in client-side session
+        //session callback called whenever a session is called
         async session({session, token}) {
-            session.user.role = token.role;
-            session.user.id = token.id;
+            if (token) {
+                session.user.id = token.id,
+                session.user.email = token.email,
+                session.user.role = token.role
+            }
             return session;
         },
     },
-    session: {strategy: 'jwt'},
-    pages: {
-        signIn: '/login',
-        error: '/auth/error',
-    },
-});
+}
+
+export const {handlers} = NextAuth(Auth);
+export const GET = handlers.GET;
+export const POST = handlers.POST;
+export const {auth, signIn, signOut} = NextAuth(Auth);
