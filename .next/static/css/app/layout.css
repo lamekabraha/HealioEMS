@@ -235,6 +235,9 @@
   .absolute {
     position: absolute;
   }
+  .fixed {
+    position: fixed;
+  }
   .static {
     position: static;
   }
@@ -261,6 +264,9 @@
   }
   .w-1\/2 {
     width: calc(1/2 * 100%);
+  }
+  .w-3\/5 {
+    width: calc(3/5 * 100%);
   }
   .columns-2 {
     columns: 2;
@@ -326,6 +332,9 @@
   }
   .bg-no-repeat {
     background-repeat: no-repeat;
+  }
+  .bg-repeat {
+    background-repeat: repeat;
   }
   .p-5 {
     padding: calc(var(--spacing) * 5);
