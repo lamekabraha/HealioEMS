@@ -328,8 +328,14 @@
     border-style: var(--tw-border-style);
     border-width: 2px;
   }
+  .border-activeBlue {
+    border-color: #3182ce;
+  }
   .border-softBlue {
     border-color: #add8e6;
+  }
+  .bg-activeBlue {
+    background-color: #3182ce;
   }
   .bg-darkBlue {
     background-color: #2b6cb0;

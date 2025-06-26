@@ -109,7 +109,9 @@ export default function LoginPage() {
                             required
                         />
                     </div>
-                    <button type="submit" className="">Sign In</button>
+                    <button type="submit" className="hover:bg-activeBlue border-1 border-activeBlue ">Sign In</button>
                 </form>
             </div>
-        </d
+        </div>
+    )
+}
